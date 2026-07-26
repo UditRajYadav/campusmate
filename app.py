@@ -10,9 +10,133 @@ from groq import Groq
 load_dotenv()
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
-st.set_page_config(page_title="CampusMate", page_icon="🎓")
-st.title("🎓 CampusMate")
-st.caption("Ask me anything about your college documents and website")
+st.set_page_config(page_title="CampusMate | BBDU", page_icon="🎓", layout="wide")
+
+# ---------------- CSS ----------------
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+* { font-family: 'Poppins', sans-serif !important; }
+
+#MainMenu, header, footer { visibility: hidden; }
+.block-container { padding-top: 1.5rem; max-width: 900px; }
+
+body {
+    background: radial-gradient(circle at 20% 20%, #1e293b 0%, #0f172a 60%);
+}
+
+.hero {
+    text-align: center;
+    padding: 1.5rem 0 2rem 0;
+}
+.hero-badge {
+    display: inline-block;
+    background: rgba(56,189,248,0.12);
+    color: #38bdf8;
+    padding: 5px 16px;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+    border: 1px solid rgba(56,189,248,0.3);
+}
+.hero-title {
+    font-size: 3rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+}
+.hero-subtitle {
+    color: #94a3b8;
+    font-size: 1.05rem;
+    margin-top: 8px;
+}
+
+.quick-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 10px 16px;
+    color: #cbd5e1;
+    font-size: 0.85rem;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.chat-card {
+    border-radius: 18px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    backdrop-filter: blur(10px);
+    line-height: 1.55;
+}
+.user-card {
+    background: linear-gradient(135deg, #38bdf8, #6366f1);
+    color: white;
+    margin-left: 15%;
+    border-bottom-right-radius: 4px;
+}
+.bot-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #e2e8f0;
+    margin-right: 15%;
+    border-bottom-left-radius: 4px;
+}
+.card-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    opacity: 0.7;
+    margin-bottom: 6px;
+}
+.source-pill {
+    display: inline-block;
+    background: rgba(56,189,248,0.15);
+    color: #38bdf8;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    margin-top: 10px;
+    font-weight: 600;
+}
+
+div[data-testid="stChatInput"] textarea {
+    border-radius: 16px !important;
+    border: 1.5px solid rgba(56,189,248,0.4) !important;
+    background: rgba(255,255,255,0.04) !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------- Hero ----------------
+st.markdown("""
+<div class="hero">
+    <div class="hero-badge">🎓 AI-POWERED &nbsp;·&nbsp; RAG CHATBOT</div>
+    <div class="hero-title">CampusMate</div>
+    <div class="hero-subtitle">Your instant answer engine for everything BBDU — fees, calendar, notices & more</div>
+</div>
+""", unsafe_allow_html=True)
+
+# ---------------- Sidebar ----------------
+with st.sidebar:
+    st.markdown("### 🎓 CampusMate")
+    st.markdown("An AI RAG chatbot built for **Babu Banarasi Das University**, combining live web data and official PDFs.")
+    st.markdown("---")
+    st.markdown("**📚 Data Sources**")
+    st.markdown("- Fee Structure PDF\n- Academic Handbook\n- Holiday Calendar\n- BBDU Website (live)")
+    st.markdown("---")
+    st.markdown("**⚙️ Tech Stack**")
+    st.markdown("RAG · ChromaDB · Sentence-Transformers · Groq LLaMA 3.1 · Streamlit")
+    if st.button("🗑️ Clear Chat", use_container_width=True):
+        st.session_state.messages = []
+        st.rerun()
 
 WEB_URLS = [
     "https://www.bbdu.ac.in/",
@@ -22,6 +146,7 @@ WEB_URLS = [
     "https://www.bbdu.ac.in/anti-ragging",
     "https://www.bbdu.ac.in/iqac/policy-document",
 ]
+
 @st.cache_resource
 def build_index():
     pdf_docs = load_all_pdfs()
@@ -46,13 +171,12 @@ def build_index():
             chunk_id += 1
     return model, collection
 
-with st.spinner("Loading documents and website content..."):
+with st.spinner("🔧 Loading knowledge base..."):
     model, collection = build_index()
 
 def get_answer(question):
     query_embedding = model.encode([question])
     results = collection.query(query_embeddings=query_embedding.tolist(), n_results=5)
-
     context_chunks = results["documents"][0]
     sources = results["metadatas"][0]
     combined_context = "\n\n".join(context_chunks)
@@ -63,12 +187,8 @@ using ONLY the information given below.
 
 Important reasoning rule: If a fee is stated as "per semester" or "per Sem" without 
 naming a specific semester number, that fee applies equally to EVERY semester of that 
-course's duration (e.g., "Rs. 70,250/- per Sem" for a 4-year B.Tech course means 
-Rs. 70,250/- for semester 1, 2, 3, 4, 5, 6, 7, and 8 alike) — unless the context 
-explicitly states a different amount for a specific semester.
-
-If multiple sources give related information, prioritize a clean summary source 
-(like fee_summary.txt) over a raw table extraction if both are present.
+course's duration — unless the context explicitly states a different amount for a 
+specific semester.
 
 If the answer genuinely isn't in the context even after this reasoning, say you don't know.
 
@@ -83,25 +203,47 @@ Answer:"""
         model="llama-3.1-8b-instant",
         messages=[{"role": "user", "content": prompt}],
     )
-    answer = response.choices[0].message.content
-    return answer, source_file
+    return response.choices[0].message.content, source_file
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# ---------------- Quick question buttons (only show if no chat yet) ----------------
+if not st.session_state.messages:
+    st.markdown("##### 💡 Try asking:")
+    cols = st.columns(4)
+    quick_qs = ["What is the fee for B.Tech CSE?", "When do holidays start?", "What is the pincode of BBDU?", "Anti-ragging policy?"]
+    for col, q in zip(cols, quick_qs):
+        if col.button(q, use_container_width=True):
+            st.session_state.pending_question = q
+
+# ---------------- Render chat history as custom cards ----------------
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.write(msg["content"])
+    if msg["role"] == "user":
+        st.markdown(f"""
+        <div class="chat-card user-card">
+            <div class="card-label">You</div>
+            {msg["content"]}
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        source_html = f'<div class="source-pill">📄 {msg.get("source","")}</div>' if msg.get("source") else ""
+        st.markdown(f"""
+        <div class="chat-card bot-card">
+            <div class="card-label">🎓 CampusMate</div>
+            {msg["content"]}
+            {source_html}
+        </div>
+        """, unsafe_allow_html=True)
 
-question = st.chat_input("Type your question...")
-if question:
-    st.session_state.messages.append({"role": "user", "content": question})
-    with st.chat_message("user"):
-        st.write(question)
+# ---------------- Input handling ----------------
+question = st.chat_input("Ask CampusMate anything about BBDU...")
+pending = st.session_state.pop("pending_question", None)
+final_question = pending or question
 
-    with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
-            answer, source_file = get_answer(question)
-            st.write(answer)
-            st.caption(f"📄 Source: {source_file}")
-    st.session_state.messages.append({"role": "assistant", "content": answer})
+if final_question:
+    st.session_state.messages.append({"role": "user", "content": final_question})
+    with st.spinner("Thinking..."):
+        answer, source_file = get_answer(final_question)
+    st.session_state.messages.append({"role": "assistant", "content": answer, "source": source_file})
+    st.rerun()
