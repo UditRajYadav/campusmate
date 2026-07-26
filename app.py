@@ -15,13 +15,13 @@ st.title("🎓 CampusMate")
 st.caption("Ask me anything about your college documents and website")
 
 WEB_URLS = [
+    "https://www.bbdu.ac.in/",
     "https://www.bbdu.ac.in/category/notices",
     "https://www.bbdu.ac.in/category/academic-calendar",
     "https://www.bbdu.ac.in/category/examination-notices",
     "https://www.bbdu.ac.in/anti-ragging",
     "https://www.bbdu.ac.in/iqac/policy-document",
 ]
-
 @st.cache_resource
 def build_index():
     pdf_docs = load_all_pdfs()
