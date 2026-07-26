@@ -4,3 +4,6 @@ sentence-transformers
 chromadb
 python-dotenv
 groq
+beautifulsoup4
+requests
+torchvision
