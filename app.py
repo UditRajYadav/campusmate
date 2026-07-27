@@ -181,19 +181,65 @@ FEE_LINES = load_lines("fee_summary.txt")
 GENERAL_LINES = load_lines("general_info.txt")
 
 def normalize(text):
-    return re.sub(r'[^a-z0-9\s]', '', text.lower())
+    text = text.lower()
 
+    # Remove punctuation
+    text = re.sub(r'[^a-z0-9\s]', ' ', text)
+
+    # Compress multiple spaces
+    text = re.sub(r'\s+', ' ', text).strip()
+
+    # Common course aliases
+    aliases = {
+        "b tech": "btech",
+        "m tech": "mtech",
+        "b a": "ba",
+        "m a": "ma",
+        "b sc": "bsc",
+        "m sc": "msc",
+        "b com": "bcom",
+        "m com": "mcom",
+        "b ca": "bca",
+        "m ca": "mca",
+        "b pharm": "bpharm",
+        "m pharm": "mpharm",
+        "b ed": "bed",
+        "ph d": "phd",
+        "journalism and mass communication": "jmc",
+        "journalism & mass communication": "jmc",
+        "computer science engineering": "cse",
+        "computer science and engineering": "cse",
+        "artificial intelligence": "ai",
+        "bachelor of arts": "ba",
+        "bachelor of science": "bsc",
+        "bachelor of commerce": "bcom",
+    }
+
+    for old, new in aliases.items():
+        text = text.replace(old, new)
+
+    return text
 def search_lines(question, lines):
-    """Find lines that contain keywords from the question (punctuation-insensitive)."""
-    question_normalized = normalize(question)
-    question_words = [w for w in question_normalized.split() if len(w) > 2]
-    matches = []
-    for line in lines:
-        line_normalized = normalize(line)
-        if any(word in line_normalized for word in question_words):
-            matches.append(line)
-    return matches
+    question = normalize(question)
+    q_words = set(question.split())
 
+    matches = []
+
+    for line in lines:
+        line_norm = normalize(line)
+
+        score = 0
+
+        for word in q_words:
+            if word in line_norm:
+                score += 1
+
+        if score > 0:
+            matches.append((score, line))
+
+    matches.sort(reverse=True)
+
+    return [line for score, line in matches]
 def get_answer(question):
     q = question.lower().strip()
 
