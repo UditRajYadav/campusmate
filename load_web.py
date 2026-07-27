@@ -28,6 +28,7 @@ if __name__ == "__main__":
         "https://www.bbdu.ac.in/category/examination-notices",
         "https://www.bbdu.ac.in/anti-ragging",
         "https://www.bbdu.ac.in/iqac/policy-document",
+        "https://collegedunia.com/lucknow-colleges",
     ]
     docs = load_web_pages(test_urls)
     for url, text in docs:
