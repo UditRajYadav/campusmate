@@ -5,6 +5,7 @@ from sentence_transformers import SentenceTransformer
 import chromadb
 from dotenv import load_dotenv
 import os
+import re
 from groq import Groq
 
 load_dotenv()
@@ -54,17 +55,6 @@ body {
     color: #94a3b8;
     font-size: 1.05rem;
     margin-top: 8px;
-}
-
-.quick-btn {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
-    padding: 10px 16px;
-    color: #cbd5e1;
-    font-size: 0.85rem;
-    text-align: center;
-    transition: all 0.2s ease;
 }
 
 .chat-card {
@@ -159,7 +149,11 @@ def build_index():
 
     chunk_id = 0
     for source_name, text in all_docs:
-        chunks = chunk_text(text)
+        if source_name == "fee_summary.txt":
+            chunks = [line.strip() for line in text.split("\n") if line.strip()]
+        else:
+            chunks = chunk_text(text)
+
         embeddings = model.encode(chunks)
         for chunk, embedding in zip(chunks, embeddings):
             collection.add(
@@ -174,21 +168,57 @@ def build_index():
 with st.spinner("🔧 Loading knowledge base..."):
     model, collection = build_index()
 
+def load_fee_lines():
+    """Load fee_summary.txt as a plain list of lines for direct keyword search."""
+    path = os.path.join("documents", "fee_summary.txt")
+    with open(path, "r", encoding="utf-8") as f:
+        return [line.strip() for line in f if line.strip()]
+
+FEE_LINES = load_fee_lines()
+
+def normalize(text):
+    return re.sub(r'[^a-z0-9\s]', '', text.lower())
+
+def search_fee_lines(question):
+    """Find fee_summary lines that contain keywords from the question (punctuation-insensitive)."""
+    question_normalized = normalize(question)
+    question_words = [w for w in question_normalized.split() if len(w) > 2]
+
+    matches = []
+    for line in FEE_LINES:
+        line_normalized = normalize(line)
+        if any(word in line_normalized for word in question_words):
+            matches.append(line)
+    return matches
+
 def get_answer(question):
-    query_embedding = model.encode([question])
-    results = collection.query(query_embeddings=query_embedding.tolist(), n_results=5)
-    context_chunks = results["documents"][0]
-    sources = results["metadatas"][0]
-    combined_context = "\n\n".join(context_chunks)
-    source_file = sources[0]["source"]
+    fee_keywords = ["fee", "fees", "tuition", "cost", "charges", "payment"]
+    is_fee_question = any(word in question.lower() for word in fee_keywords)
+
+    if is_fee_question:
+        matched_lines = search_fee_lines(question)
+        if matched_lines:
+            combined_context = "\n".join(matched_lines)
+            source_file = "fee_summary.txt"
+        else:
+            query_embedding = model.encode([question])
+            results = collection.query(query_embeddings=query_embedding.tolist(), n_results=5,
+                                        where={"source": "fee_summary.txt"})
+            combined_context = "\n\n".join(results["documents"][0])
+            source_file = "fee_summary.txt"
+    else:
+        query_embedding = model.encode([question])
+        results = collection.query(query_embeddings=query_embedding.tolist(), n_results=8)
+        combined_context = "\n\n".join(results["documents"][0])
+        source_file = results["metadatas"][0][0]["source"]
 
     prompt = f"""You are a helpful college assistant. Answer the student's question 
 using ONLY the information given below.
 
-Important reasoning rule: If a fee is stated as "per semester" or "per Sem" without 
-naming a specific semester number, that fee applies equally to EVERY semester of that 
-course's duration — unless the context explicitly states a different amount for a 
-specific semester.
+Important reasoning rule: If a fee is stated as "per semester" without naming a specific 
+semester number, it applies equally to EVERY semester of that course's duration. Course 
+name abbreviations should be matched flexibly (e.g., "Mtech", "M.Tech", "M. Tech" all 
+refer to the same "M.Tech" course).
 
 If the answer genuinely isn't in the context even after this reasoning, say you don't know.
 
@@ -208,7 +238,6 @@ Answer:"""
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# ---------------- Quick question buttons (only show if no chat yet) ----------------
 if not st.session_state.messages:
     st.markdown("##### 💡 Try asking:")
     cols = st.columns(4)
@@ -217,7 +246,6 @@ if not st.session_state.messages:
         if col.button(q, use_container_width=True):
             st.session_state.pending_question = q
 
-# ---------------- Render chat history as custom cards ----------------
 for msg in st.session_state.messages:
     if msg["role"] == "user":
         st.markdown(f"""
@@ -227,16 +255,12 @@ for msg in st.session_state.messages:
         </div>
         """, unsafe_allow_html=True)
     else:
-        source_html = f'<div class="source-pill">📄 {msg.get("source","")}</div>' if msg.get("source") else ""
         st.markdown(f"""
         <div class="chat-card bot-card">
             <div class="card-label">🎓 CampusMate</div>
             {msg["content"]}
-            {source_html}
         </div>
         """, unsafe_allow_html=True)
-
-# ---------------- Input handling ----------------
 question = st.chat_input("Ask CampusMate anything about BBDU...")
 pending = st.session_state.pop("pending_question", None)
 final_question = pending or question
