@@ -139,7 +139,7 @@ def build_index():
 
     chunk_id = 0
     for source_name, text in all_docs:
-        if source_name == "fee_summary.txt":
+        if source_name in ("fee_summary.txt", "general_info.txt"):
             chunks = [line.strip() for line in text.split("\n") if line.strip()]
         else:
             chunks = chunk_text(text)
@@ -158,35 +158,52 @@ def build_index():
 with st.spinner("🔧 Loading knowledge base..."):
     model, collection = build_index()
 
-def load_fee_lines():
-    """Load fee_summary.txt as a plain list of lines for direct keyword search."""
-    path = os.path.join("documents", "fee_summary.txt")
+def load_lines(filename):
+    path = os.path.join("documents", filename)
+    if not os.path.exists(path):
+        return []
     with open(path, "r", encoding="utf-8") as f:
         return [line.strip() for line in f if line.strip()]
 
-FEE_LINES = load_fee_lines()
+FEE_LINES = load_lines("fee_summary.txt")
+GENERAL_LINES = load_lines("general_info.txt")
 
 def normalize(text):
     return re.sub(r'[^a-z0-9\s]', '', text.lower())
 
-def search_fee_lines(question):
-    """Find fee_summary lines that contain keywords from the question (punctuation-insensitive)."""
+def search_lines(question, lines):
+    """Find lines that contain keywords from the question (punctuation-insensitive)."""
     question_normalized = normalize(question)
     question_words = [w for w in question_normalized.split() if len(w) > 2]
-
     matches = []
-    for line in FEE_LINES:
+    for line in lines:
         line_normalized = normalize(line)
         if any(word in line_normalized for word in question_words):
             matches.append(line)
     return matches
 
 def get_answer(question):
+    general_keywords = ["pincode", "pin code", "address", "location", "contact",
+                         "phone", "email", "helpline", "situated", "where"]
     fee_keywords = ["fee", "fees", "tuition", "cost", "charges", "payment"]
-    is_fee_question = any(word in question.lower() for word in fee_keywords)
 
-    if is_fee_question:
-        matched_lines = search_fee_lines(question)
+    q_lower = question.lower()
+    is_general_question = any(word in q_lower for word in general_keywords)
+    is_fee_question = any(word in q_lower for word in fee_keywords)
+
+    if is_general_question and GENERAL_LINES:
+        matched_lines = search_lines(question, GENERAL_LINES)
+        if matched_lines:
+            combined_context = "\n".join(matched_lines)
+            source_file = "general_info.txt"
+        else:
+            query_embedding = model.encode([question])
+            results = collection.query(query_embeddings=query_embedding.tolist(), n_results=8)
+            combined_context = "\n\n".join(results["documents"][0])
+            source_file = results["metadatas"][0][0]["source"]
+
+    elif is_fee_question:
+        matched_lines = search_lines(question, FEE_LINES)
         if matched_lines:
             combined_context = "\n".join(matched_lines)
             source_file = "fee_summary.txt"
@@ -196,6 +213,7 @@ def get_answer(question):
                                         where={"source": "fee_summary.txt"})
             combined_context = "\n\n".join(results["documents"][0])
             source_file = "fee_summary.txt"
+
     else:
         query_embedding = model.encode([question])
         results = collection.query(query_embeddings=query_embedding.tolist(), n_results=8)
