@@ -135,21 +135,16 @@ def build_index():
 
     model = SentenceTransformer("all-MiniLM-L6-v2")
 
-    # Create Chroma client
     chroma_client = chromadb.Client()
 
-    # Always start with a fresh collection
     try:
         chroma_client.delete_collection("campusmate_docs")
     except Exception:
         pass
 
-    chroma_client = chromadb.Client()
-
-try:
-    collection = chroma_client.get_collection("campusmate_docs")
-except Exception:
-    collection = chroma_client.create_collection("campusmate_docs")
+    collection = chroma_client.create_collection(
+        name="campusmate_docs"
+    )
 
     chunk_id = 0
 
@@ -163,14 +158,12 @@ except Exception:
         embeddings = model.encode(chunks)
 
         for chunk, embedding in zip(chunks, embeddings):
-
             collection.add(
                 ids=[f"chunk_{chunk_id}"],
                 embeddings=[embedding.tolist()],
                 documents=[chunk],
                 metadatas=[{"source": source_name}]
             )
-
             chunk_id += 1
 
     return model, collection
