@@ -134,30 +134,43 @@ def build_index():
     all_docs = pdf_docs + web_docs
 
     model = SentenceTransformer("all-MiniLM-L6-v2")
+
+    # Create Chroma client
     chroma_client = chromadb.Client()
 
-collection = chroma_client.get_or_create_collection(
-    name="campusmate_docs"
-)
+    # Always start with a fresh collection
+    try:
+        chroma_client.delete_collection("campusmate_docs")
+    except Exception:
+        pass
+
+    collection = chroma_client.create_collection(
+        name="campusmate_docs"
+    )
 
     chunk_id = 0
+
     for source_name, text in all_docs:
+
         if source_name in ("fee_summary.txt", "general_info.txt"):
             chunks = [line.strip() for line in text.split("\n") if line.strip()]
         else:
             chunks = chunk_text(text)
 
         embeddings = model.encode(chunks)
+
         for chunk, embedding in zip(chunks, embeddings):
+
             collection.add(
                 ids=[f"chunk_{chunk_id}"],
                 embeddings=[embedding.tolist()],
                 documents=[chunk],
                 metadatas=[{"source": source_name}]
             )
-            chunk_id += 1
-    return model, collection
 
+            chunk_id += 1
+
+    return model, collection
 with st.spinner("🔧 Loading knowledge base..."):
     model, collection = build_index()
 
