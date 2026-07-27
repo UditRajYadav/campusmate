@@ -195,6 +195,27 @@ def search_lines(question, lines):
     return matches
 
 def get_answer(question):
+    q = question.lower().strip()
+
+    creator_keywords = [
+        "who created you",
+        "who made you",
+        "who developed you",
+        "who built you",
+        "who is your creator",
+        "your developer",
+        "who designed you"
+    ]
+
+    if any(k in q for k in creator_keywords):
+        return (
+            "I was created by **Udit Raj Yadav**, a B.Tech Computer Science & Engineering (Artificial Intelligence) student at Babu Banarasi Das University (BBDU), Lucknow, as his major project. My purpose is to help students quickly access information about BBDU using AI.",
+            "Developer Information"
+        )
+
+    general_keywords = ["pincode", "pin code", "address", "location",
+                        "contact", "phone", "email", "helpline",
+                        "situated", "where"]
     general_keywords = ["pincode", "pin code", "address", "location", "contact",
                          "phone", "email", "helpline", "situated", "where"]
     fee_keywords = ["fee", "fees", "tuition", "cost", "charges", "payment"]
