@@ -208,7 +208,10 @@ def get_answer(question):
             source_file = "fee_summary.txt"
     else:
         query_embedding = model.encode([question])
-        results = collection.query(query_embeddings=query_embedding.tolist(), n_results=8)
+        results = collection.query(
+    query_embeddings=query_embedding.tolist(),
+    n_results=15
+)
         combined_context = "\n\n".join(results["documents"][0])
         source_file = results["metadatas"][0][0]["source"]
 
@@ -220,7 +223,18 @@ semester number, it applies equally to EVERY semester of that course's duration.
 name abbreviations should be matched flexibly (e.g., "Mtech", "M.Tech", "M. Tech" all 
 refer to the same "M.Tech" course).
 
-If the answer genuinely isn't in the context even after this reasoning, say you don't know.
+You are CampusMate, an AI assistant for BBDU.
+
+Answer ONLY using the context below.
+
+If the answer can be inferred from the context, infer it.
+
+Example:
+- If the context contains "Lucknow 226028", then the pincode is 226028.
+- If the context contains an address, answer location-related questions from that address.
+- If the context contains semester-wise fees, answer fee questions from those values.
+
+Only reply "I don't know" if the answer is completely absent from the context.
 
 Context:
 {combined_context}
