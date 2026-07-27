@@ -191,30 +191,93 @@ def normalize(text):
 
     # Common course aliases
     aliases = {
-        "b tech": "btech",
-        "m tech": "mtech",
-        "b a": "ba",
-        "m a": "ma",
-        "b sc": "bsc",
-        "m sc": "msc",
-        "b com": "bcom",
-        "m com": "mcom",
-        "b ca": "bca",
-        "m ca": "mca",
-        "b pharm": "bpharm",
-        "m pharm": "mpharm",
-        "b ed": "bed",
-        "ph d": "phd",
-        "journalism and mass communication": "jmc",
-        "journalism & mass communication": "jmc",
-        "computer science engineering": "cse",
-        "computer science and engineering": "cse",
-        "artificial intelligence": "ai",
-        "bachelor of arts": "ba",
-        "bachelor of science": "bsc",
-        "bachelor of commerce": "bcom",
-    }
+    # Engineering
+    "btech": "b.tech",
+    "b tech": "b.tech",
+    "b.tech cse": "b.tech cse",
+    "computer science": "cse",
+    "artificial intelligence": "ai",
+    "machine learning": "ml",
+    "cloud computing": "cloud",
+    "blockchain": "blockchain",
+    "generative ai": "gen ai",
 
+    # Management
+    "bba": "bba",
+    "business administration": "bba",
+    "business analytics": "business analytics",
+    "logistics": "logistics",
+    "supply chain": "supply chain",
+    "mba": "mba",
+
+    # Computer Applications
+    "bca": "bca",
+    "computer applications": "bca",
+    "mca": "mca",
+    "cyber security": "cyber security",
+    "cybersecurity": "cyber security",
+    "forensics": "forensics",
+    "data science": "data science",
+
+    # Commerce
+    "bcom": "b.com",
+    "b com": "b.com",
+    "b.com": "b.com",
+    "commerce": "b.com",
+
+    # Pharmacy
+    "b pharma": "b.pharma",
+    "bpharma": "b.pharma",
+    "b pharm": "b.pharma",
+    "b.pharm": "b.pharma",
+    "bachelor of pharmacy": "b.pharma",
+    "pharmacy": "b.pharma",
+
+    # Agriculture
+    "agriculture": "b.sc agriculture",
+    "bsc agriculture": "b.sc agriculture",
+
+    # Mathematics
+    "bsc maths": "b.sc mathematics",
+    "bsc math": "b.sc mathematics",
+    "mathematics": "mathematics",
+    "maths": "mathematics",
+    "math": "mathematics",
+
+    # Architecture & Design
+    "architecture": "b.arch",
+    "b arch": "b.arch",
+    "b.arch": "b.arch",
+    "interior design": "bachelor of interior design",
+
+    # Law
+    "llb": "ll.b",
+    "ll b": "ll.b",
+    "ll.m": "ll.m",
+    "llm": "ll.m",
+
+    # Arts & Journalism
+    "ba": "ba",
+    "b.a": "ba",
+    "bachelor of arts": "ba",
+    "journalism": "jmc",
+    "mass communication": "jmc",
+    "jmc": "jmc",
+
+    # Hotel Management
+    "bhmct": "bhmct",
+    "hotel management": "mhm",
+    "mhm": "mhm",
+
+    # Education
+    "bed": "b.ed",
+    "b ed": "b.ed",
+    "b.ed": "b.ed",
+
+    # Research
+    "phd": "ph.d",
+    "ph.d": "ph.d",
+}
     for old, new in aliases.items():
         text = text.replace(old, new)
 
