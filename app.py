@@ -86,16 +86,6 @@ body {
     opacity: 0.7;
     margin-bottom: 6px;
 }
-.source-pill {
-    display: inline-block;
-    background: rgba(56,189,248,0.15);
-    color: #38bdf8;
-    padding: 3px 12px;
-    border-radius: 20px;
-    font-size: 0.72rem;
-    margin-top: 10px;
-    font-weight: 600;
-}
 
 div[data-testid="stChatInput"] textarea {
     border-radius: 16px !important;
@@ -208,33 +198,20 @@ def get_answer(question):
             source_file = "fee_summary.txt"
     else:
         query_embedding = model.encode([question])
-        results = collection.query(
-    query_embeddings=query_embedding.tolist(),
-    n_results=15
-)
+        results = collection.query(query_embeddings=query_embedding.tolist(), n_results=8)
         combined_context = "\n\n".join(results["documents"][0])
         source_file = results["metadatas"][0][0]["source"]
 
-    prompt = f"""You are a helpful college assistant. Answer the student's question 
-using ONLY the information given below.
+    prompt = f"""You are CampusMate, a helpful AI assistant for BBDU (Babu Banarasi Das University).
 
-Important reasoning rule: If a fee is stated as "per semester" without naming a specific 
-semester number, it applies equally to EVERY semester of that course's duration. Course 
-name abbreviations should be matched flexibly (e.g., "Mtech", "M.Tech", "M. Tech" all 
-refer to the same "M.Tech" course).
+Answer the student's question using ONLY the information given below.
 
-You are CampusMate, an AI assistant for BBDU.
+Reasoning rules:
+- If a fee is stated as "per semester" without naming a specific semester number, it applies equally to EVERY semester of that course's duration.
+- Course name abbreviations should be matched flexibly (e.g., "Mtech", "M.Tech", "M. Tech" all refer to the same course).
+- If the answer can be reasonably inferred from the context, infer it (e.g., if the context contains "Lucknow 226028", the pincode is 226028; if it contains an address, use that for location questions).
 
-Answer ONLY using the context below.
-
-If the answer can be inferred from the context, infer it.
-
-Example:
-- If the context contains "Lucknow 226028", then the pincode is 226028.
-- If the context contains an address, answer location-related questions from that address.
-- If the context contains semester-wise fees, answer fee questions from those values.
-
-Only reply "I don't know" if the answer is completely absent from the context.
+Only say "I don't know" if the answer is genuinely absent from the context even after this reasoning.
 
 Context:
 {combined_context}
@@ -275,6 +252,7 @@ for msg in st.session_state.messages:
             {msg["content"]}
         </div>
         """, unsafe_allow_html=True)
+
 question = st.chat_input("Ask CampusMate anything about BBDU...")
 pending = st.session_state.pop("pending_question", None)
 final_question = pending or question

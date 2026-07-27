@@ -10,7 +10,6 @@ def load_web_pages(urls):
             response = requests.get(url, headers=headers, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
 
-            # Remove scripts/styles/nav clutter
             for tag in soup(["script", "style", "nav", "footer", "header"]):
                 tag.decompose()
 
@@ -23,12 +22,12 @@ def load_web_pages(urls):
 
 if __name__ == "__main__":
     test_urls = [
+        "https://www.bbdu.ac.in/",
         "https://www.bbdu.ac.in/category/notices",
         "https://www.bbdu.ac.in/category/academic-calendar",
         "https://www.bbdu.ac.in/category/examination-notices",
         "https://www.bbdu.ac.in/anti-ragging",
         "https://www.bbdu.ac.in/iqac/policy-document",
-        "https://collegedunia.com/lucknow-colleges",
     ]
     docs = load_web_pages(test_urls)
     for url, text in docs:
