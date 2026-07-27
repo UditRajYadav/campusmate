@@ -144,9 +144,12 @@ def build_index():
     except Exception:
         pass
 
-    collection = chroma_client.create_collection(
-        name="campusmate_docs"
-    )
+    chroma_client = chromadb.Client()
+
+try:
+    collection = chroma_client.get_collection("campusmate_docs")
+except Exception:
+    collection = chroma_client.create_collection("campusmate_docs")
 
     chunk_id = 0
 
