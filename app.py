@@ -135,7 +135,10 @@ def build_index():
 
     model = SentenceTransformer("all-MiniLM-L6-v2")
     chroma_client = chromadb.Client()
-    collection = chroma_client.create_collection(name="campusmate_docs")
+
+collection = chroma_client.get_or_create_collection(
+    name="campusmate_docs"
+)
 
     chunk_id = 0
     for source_name, text in all_docs:
